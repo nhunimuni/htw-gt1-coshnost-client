@@ -6,6 +6,7 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="src/coshnost/coshnost.jar"/>
+	<classpathentry kind="lib" path="/Users/hieu/eclipse-workspace/COSHNOST-Client/src/coshnost/coshnost.jar"/>
+	<classpathentry kind="lib" path="/Users/hieu/eclipse-workspace/COSHNOST-Client/commons-math3-3.6.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
