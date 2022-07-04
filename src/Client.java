@@ -1,9 +1,12 @@
 import java.util.ArrayList;
+import java.util.List;
 
-import clustering.ClusteringThread;
-import clustering.DBSCAN;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
+import org.apache.commons.math3.ml.clustering.Cluster;
+
 import clustering.DBSCANApache;
 import clustering.DataPoint;
+import clustering.FuzzyKMeansApache;
 import lenz.htw.coshnost.net.NetworkClient;
 import lenz.htw.coshnost.world.GraphNode;
 
@@ -32,8 +35,9 @@ public class Client {
 
     GraphNode[] neighbors = graph[0].getNeighbors();    //immer genau 5 oder 6 Nachbarn
  
-    DBSCANApache DBSCAN = new DBSCANApache(1, 5);
+    DBSCANApache DBSCAN = new DBSCANApache(0.7, 5);
     DBSCANApache DBSCANBlank = new DBSCANApache(1, 5);
+    FuzzyKMeansApache FuzzyKMeans = new FuzzyKMeansApache(2, 2);
     long recentId = -1;
     while (client.isGameRunning()) {
     	long currentUpdateId = client.getMostRecentUpdateId();
@@ -55,8 +59,6 @@ public class Client {
         				p.add(new DataPoint(node));
         			};		
         		}
-        		//DBSCAN.cluster(p);
-        		
         		// BLANK NODES
         		ArrayList<DataPoint> p2 = new ArrayList<DataPoint>();
         		for (GraphNode node: netGraph) {
@@ -64,7 +66,25 @@ public class Client {
         				p2.add(new DataPoint(node));
         			};		
         		}
-        		DBSCANBlank.cluster(p2);
+        		
+        		System.out.println("\nMy Number: " + myNumber + "\n");
+        		//--------- DBSCAN- Measure execution time - start 
+        		long startTime = System.nanoTime();
+        		List<Cluster<DataPoint>> dbscanCluster = DBSCAN.cluster(p);
+        		//List<Cluster<DataPoint>> dbscanCluster2 = DBSCANBlank.cluster(p2);
+        		long endTime = System.nanoTime();
+        		long duration = (endTime - startTime);
+        		System.out.println("DBSCAN Elapsed Time in nano seconds: " + duration); 
+        		//--------- DBSCAN- Measure execution time - end
+        		
+        		
+        		//--------- FuzzyKMeans - Measure execution time - start 
+        		long startTime2 = System.nanoTime();
+        		List<CentroidCluster<DataPoint>> fuzzyKMansCluster2 = FuzzyKMeans.cluster(p);
+        		long endTime2 = System.nanoTime();
+        		long duration2 = (endTime2 - startTime2);
+        		System.out.println("FuzzyK Elapsed Time in nano seconds: " + duration2); 
+        		//--------- FuzzyKMeans - Measure execution time - end
         		
     		}
     	}
