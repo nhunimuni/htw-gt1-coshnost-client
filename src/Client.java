@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
@@ -80,7 +81,10 @@ public class Client {
         		
         		//--------- FuzzyKMeans - Measure execution time - start 
         		long startTime2 = System.nanoTime();
-        		List<CentroidCluster<DataPoint>> fuzzyKMansCluster2 = FuzzyKMeans.cluster(p);
+        		List<CentroidCluster<DataPoint>> fuzzyKMansCluster = FuzzyKMeans.cluster(p);
+        		for (CentroidCluster<DataPoint> c : fuzzyKMansCluster) {
+        			System.out.println("FuzzyK Center of Cluster " + c.toString() + ": " + Arrays.toString(c.getCenter().getPoint()));
+        		}
         		long endTime2 = System.nanoTime();
         		long duration2 = (endTime2 - startTime2);
         		System.out.println("FuzzyK Elapsed Time in nano seconds: " + duration2); 
