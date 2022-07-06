@@ -55,15 +55,15 @@ public class Client {
     long recentId = -1;
     while (client.isGameRunning()) {
       long currentUpdateId = client.getMostRecentUpdateId();
-      client.changeMoveDirection(0, (float) 0.9703449321829755, (float) 0.026010560276715652, (float) 0.0);
-      client.changeMoveDirection(1, (float) -0.36492302185959286, (float) 0.4430104684498575, (float) 0.0);
-      client.changeMoveDirection(2, (float) 0.0, (float) -0.5254689455032349, (float) 0.0);
+      client.changeMoveDirection(0, (float) 0.9703449321829755, (float) 0.026010560276715652, (float) 0.6594838045145336);
+      client.changeMoveDirection(1, (float) -0.36492302185959286, (float) 0.4430104684498575, (float) -0.3259028345346451);
+      client.changeMoveDirection(2, (float) 0.0, (float) -0.5254689455032349, (float) -0.8059597046751725);
 
       if (currentUpdateId != recentId) {
         recentId = currentUpdateId;
         GraphNode[] netGraph = client.getGraph();
         
-        if (recentId == 200) {
+        if (recentId == 500) {
           /*
            * ArrayList<DataPoint> playersP = FILTER.getPlayersNodes(myNumber, netGraph);
            * ArrayList<DataPoint> opponentP = FILTER.getOpponentsNodes(myNumber,

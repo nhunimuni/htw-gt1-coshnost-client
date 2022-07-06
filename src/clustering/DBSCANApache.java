@@ -69,15 +69,17 @@ public class DBSCANApache {
 	}
 	
 	public List<Number> getCentroidPosition(Cluster<DataPoint> c) {
-		double centroidX = 0, centroidY = 0;
+		double centroidX = 0, centroidY = 0, centroidZ = 0;
 		List<Number> centroid = new ArrayList<Number>();
 
         for(DataPoint d : c.getPoints()) {
             centroidX += d.getNode().getX();
             centroidY += d.getNode().getY();
+            centroidZ += d.getNode().getZ();
         }
         centroid.add(centroidX / c.getPoints().size());
         centroid.add(centroidY / c.getPoints().size());
+        centroid.add(centroidZ / c.getPoints().size());
         
         return centroid;
 	}
