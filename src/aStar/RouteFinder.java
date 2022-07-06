@@ -44,7 +44,7 @@ public class RouteFinder {
         allNodes.put(connection, nextNode);
 
         double newScore = next.getRouteScore() + scorer.computeCost(next.getCurrent(), connection);
-        if (newScore < nextNode.getRouteScore()) {
+        if (!connection.isBlocked() && newScore < nextNode.getRouteScore()) {
           nextNode.setPrevious(next.getCurrent());
           nextNode.setRouteScore(newScore);
           nextNode.setEstimatedScore(newScore + scorer.computeCost(connection, to));
