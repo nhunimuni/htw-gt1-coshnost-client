@@ -1,16 +1,12 @@
 import aStar.DefaultScorer;
 import aStar.RouteFinder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.math3.ml.clustering.CentroidCluster;
-import org.apache.commons.math3.ml.clustering.Cluster;
-
+import clustering.ClusterExtension;
 import clustering.DBSCANApache;
 import clustering.DataFilter;
 import clustering.DataPoint;
-import clustering.FuzzyKMeansApache;
 import lenz.htw.coshnost.net.NetworkClient;
 import lenz.htw.coshnost.world.GraphNode;
 
@@ -50,25 +46,24 @@ public class Client {
 
     double radius = 0.04;
     DBSCANApache DBSCAN = new DBSCANApache(radius, 5);
-    DBSCANApache DBSCAN1 = new DBSCANApache(radius, 5);
+    /*DBSCANApache DBSCAN1 = new DBSCANApache(radius, 5);
     DBSCANApache DBSCAN2 = new DBSCANApache(radius, 5);
+    DBSCANApache DBSCAN3 = new DBSCANApache(radius, 5);*/
     DBSCANApache PITHOLES = new DBSCANApache(0.09, 5);
     // FuzzyKMeansApache FuzzyKMeans = new FuzzyKMeansApache(1, 2);
     DataFilter FILTER = new DataFilter();
     long recentId = -1;
     while (client.isGameRunning()) {
       long currentUpdateId = client.getMostRecentUpdateId();
-      client.changeMoveDirection(0, (float) -0.5276859402656555, (float) -0.5276859402656555, (float) 0.0);
-      client.changeMoveDirection(1, (float) -0.5276859402656555, (float) -0.5276859402656555, (float) 0.0);
-      client.changeMoveDirection(2, (float) -0.5276859402656555, (float) -0.5276859402656555, (float) 0.0);
+      client.changeMoveDirection(0, (float) 0.9703449321829755, (float) 0.026010560276715652, (float) 0.0);
+      client.changeMoveDirection(1, (float) -0.36492302185959286, (float) 0.4430104684498575, (float) 0.0);
+      client.changeMoveDirection(2, (float) 0.0, (float) -0.5254689455032349, (float) 0.0);
 
       if (currentUpdateId != recentId) {
         recentId = currentUpdateId;
         GraphNode[] netGraph = client.getGraph();
-        // getNumberOfFreeFields(netGraph);
-
-        if (recentId == 10) {
-
+        
+        if (recentId == 200) {
           /*
            * ArrayList<DataPoint> playersP = FILTER.getPlayersNodes(myNumber, netGraph);
            * ArrayList<DataPoint> opponentP = FILTER.getOpponentsNodes(myNumber,
@@ -81,10 +76,12 @@ public class Client {
           System.out.println("\nMy Number: " + myNumber + "\n");
           // --------- DBSCAN- Measure execution time - start
           long startTime = System.nanoTime();
-          List<Cluster<DataPoint>> dbscanCluster = DBSCAN.cluster(allFilteredDataTypes.get(0));
-          List<Cluster<DataPoint>> dbscanCluster1 = DBSCAN1.cluster(allFilteredDataTypes.get(1));
-          List<Cluster<DataPoint>> dbscanCluster2 = DBSCAN2.cluster(allFilteredDataTypes.get(2));
-          List<Cluster<DataPoint>> dbscanCluster3 = PITHOLES.cluster(allFilteredDataTypes.get(4));
+          List<ClusterExtension> dbscanCluster = DBSCAN.cluster(allFilteredDataTypes.get(0));
+          System.out.println("Centroid of Cluster 0: " + dbscanCluster.get(0).getCentroid());
+          //List<ClusterExtension> dbscanCluster1 = DBSCAN.cluster(allFilteredDataTypes.get(1));
+          //List<ClusterExtension> dbscanCluster2 = DBSCAN.cluster(allFilteredDataTypes.get(2));
+          //<ClusterExtension> dbscanCluster3 = DBSCAN.cluster(allFilteredDataTypes.get(3));
+          //<ClusterExtension> dbscanCluster4 = PITHOLES.cluster(allFilteredDataTypes.get(4));
 
           // List<Cluster<DataPoint>> dbscanCluster2 = DBSCANBlank.cluster(p2);
           long endTime = System.nanoTime();
@@ -112,51 +109,4 @@ public class Client {
     }
 
   }
-
-  public static int getNumberOfFreeFields(GraphNode[] netGraph) {
-    int free = 0;
-    for (GraphNode node : netGraph) {
-      if (node.getOwner() == -1)
-        free++;
-    }
-    System.out.println("UPDATED GRAPH: free: " + free);
-    return free;
-  }
-
-  /*
-   * Bot 0 (einfarbig) hat die höchste Geschwindigkeit, erhöht eigenen Farbanteil
-   * Bot 1 (gepunktet) ist am langsamsten, setzt eigenen Farbanteil hoch
-   * Bot 2 (gestreift) kann sich über Gräben bewegen, löscht alle Farben inklusive
-   * der eigenen
-   */
-
-  /*
-   * public static GraphNode aStar(GraphNode start, GraphNode target) {
-   * PriorityQueue<GraphNode> closedList = new PriorityQueue<>();
-   * PriorityQueue<GraphNode> openList = new PriorityQueue<>();
-   * 
-   * openList.add(start);
-   * 
-   * while (!openList.isEmpty()) {
-   * GraphNode n = openList.peek();
-   * if (n == target) {
-   * return n;
-   * }
-   * 
-   * for (GraphNode node : n.getNeighbors()) {
-   * // TODO
-   * // Bot 0 -> sucht nach leeren Feldern (je mehr auf einem Haufen, desto
-   * besser)
-   * // Bot 1 -> sucht nach leeren & von Gegnern gefüllten Feldern (je näher,
-   * desto besser)
-   * // Bot 2 -> sucht nach von Gegnern gefüllten Feldern (je mehr auf einem
-   * Haufen, desto besser)
-   * }
-   * 
-   * openList.remove(n);
-   * closedList.add(n);
-   * }
-   * return null;
-   * }
-   */
 }

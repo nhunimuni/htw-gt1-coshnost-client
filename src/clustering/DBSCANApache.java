@@ -21,7 +21,7 @@ public class DBSCANApache {
 		this.minPoints = minPoints;
 	}
 
-	public List<Cluster<DataPoint>> cluster(ArrayList<DataPoint> p) {
+	public List<ClusterExtension> cluster(ArrayList<DataPoint> p) {
 		this.points = p;
 
 		DBSCANClusterer<DataPoint> dbscan = new DBSCANClusterer<DataPoint>(maxRadius, minPoints, new DistanceMeasure() {
@@ -35,17 +35,28 @@ public class DBSCANApache {
 				return Math.sqrt(a + b + c);
 			}
 		});
-		List<Cluster<DataPoint>> cluster = dbscan.cluster(points);
+		
+		
+		List<Cluster<DataPoint>> clusterGroups = dbscan.cluster(points);
+		List<ClusterExtension> cluster = new ArrayList<ClusterExtension>();
+		for (Cluster<DataPoint> c : clusterGroups) {
+			//Set the DataPoint with the highest density as representative of the cluster
+			//DataPoint representative = getNodeWithHighestDensity(c);
+			//cluster.add(new ClusterExtension(representative,c));
+			
+			// Get the centroid of a cluster
+			cluster.add(new ClusterExtension(getCentroidPosition(c),c));
+		}
 
 		System.out.println("\n############ Number of Cluster: " + cluster.size());
-		for (Cluster<?> c : cluster) {
+		for (Cluster<DataPoint> c : clusterGroups) {
 			plotCluster(c, false);
 		}
 
 		return cluster;
 	}
 
-	public void plotCluster(Cluster<?> c, boolean printPoints) {
+	public void plotCluster(Cluster<DataPoint> c, boolean printPoints) {
 		System.out.println("\n############ [Cluster Size: " + c.getPoints().size() + "]");
 
 		if (printPoints) {
@@ -56,4 +67,30 @@ public class DBSCANApache {
 			}
 		}
 	}
+	
+	public List<Number> getCentroidPosition(Cluster<DataPoint> c) {
+		double centroidX = 0, centroidY = 0;
+		List<Number> centroid = new ArrayList<Number>();
+
+        for(DataPoint d : c.getPoints()) {
+            centroidX += d.getNode().getX();
+            centroidY += d.getNode().getY();
+        }
+        centroid.add(centroidX / c.getPoints().size());
+        centroid.add(centroidY / c.getPoints().size());
+        
+        return centroid;
+	}
+
+	// Algorithm described in https://www.researchgate.net/figure/Median-center-selection-based-on-the-DBSCAN-cluster-results-of-vertex-point_fig6_358838471
+	// would be ideal
+	// Get DataPoint with the highest density as representative of the cluster
+	/*public DataPoint getNodeWithHighestDensity(Cluster<DataPoint> c) {
+		for (DataPoint p : c.getPoints()) {
+			GraphNode[] n = p.getNode().getNeighbors();
+			System.out.println(n.length);
+			System.out.println(Arrays.toString(n));
+		}
+		return null;
+	}*/
 }

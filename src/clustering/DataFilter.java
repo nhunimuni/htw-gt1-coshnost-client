@@ -1,6 +1,7 @@
 package clustering;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import lenz.htw.coshnost.world.GraphNode;
@@ -120,9 +121,10 @@ public class DataFilter {
 					// 2
 					if (node.getOwner() != playerNr) {
 						occupiedP.add(new DataPoint(node));
-					} else if (node.ownership[playerNr] <= 0.5 && node.ownership[playerNr] >= 0.1) {
+					} else if (node.ownership[playerNr] <= 0.5 && node.ownership[playerNr] >= 0.01) {
 						occupiedP.add(new DataPoint(node));
 					}	
+					//System.out.println(Arrays.toString(node.ownership));
 				}
 			} else {
 				// 3
