@@ -1,38 +1,36 @@
 package aStar;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import lenz.htw.coshnost.world.GraphNode;
 
-public class RouteFinder<T extends GraphNode> {
+public class RouteFinder {
 
-  private final Graph<T> graph;
-  private final Scorer<T> nextNodeScorer;
-  private final Scorer<T> targetScorer;
+  private final Scorer scorer;
 
-  RouteFinder(Graph<T> graph, Scorer<T> nextNodeScorer, Scorer<T> targetScorer) {
-    this.graph = graph;
-    this.nextNodeScorer = nextNodeScorer;
-    this.targetScorer = targetScorer;
+  public RouteFinder(Scorer scorer) {
+    this.scorer = scorer;
   }
 
-  public List<T> findRoute(T from, T to) {
-    Queue<RouteNode<T>> openSet = new PriorityQueue<>();
-    Map<T, RouteNode<T>> allNodes = new HashMap<>();
+  public List<GraphNode> findRoute(GraphNode from, GraphNode to) {
+    Queue<RouteNode> openSet = new PriorityQueue<>();
+    Map<GraphNode, RouteNode> allNodes = new HashMap<>();
 
-    RouteNode<T> start = new RouteNode<>(from, null, 0d, targetScorer.computeCost(from, to));
+    RouteNode start = new RouteNode(from, null, 0d, scorer.computeCost(from, to));
     openSet.add(start);
     allNodes.put(from, start);
 
     while (!openSet.isEmpty()) {
-      RouteNode<T> next = openSet.poll();
+      RouteNode next = openSet.poll();
       // if current is target, return full route
       if (next.getCurrent().equals(to)) {
-        List<T> route = new ArrayList<>();
-        RouteNode<T> current = next;
+        List<GraphNode> route = new ArrayList<>();
+        RouteNode current = next;
         while (current != null) {
           route.add(0, current.getCurrent());
           current = allNodes.get(current.getPrevious());
@@ -41,15 +39,15 @@ public class RouteFinder<T extends GraphNode> {
       }
 
       // otherwise continue from connections of current
-      graph.getConnections(next.getCurrent()).forEach(connection -> {
-        RouteNode<T> nextNode = allNodes.getOrDefault(connection, new RouteNode<>(connection));
+      Arrays.stream(next.getCurrent().getNeighbors()).forEach(connection -> {
+        RouteNode nextNode = allNodes.getOrDefault(connection, new RouteNode(connection));
         allNodes.put(connection, nextNode);
 
-        double newScore = next.getRouteScore() + nextNodeScorer.computeCost(next.getCurrent(), connection);
+        double newScore = next.getRouteScore() + scorer.computeCost(next.getCurrent(), connection);
         if (newScore < nextNode.getRouteScore()) {
           nextNode.setPrevious(next.getCurrent());
           nextNode.setRouteScore(newScore);
-          nextNode.setEstimatedScore(newScore + targetScorer.computeCost(connection, to));
+          nextNode.setEstimatedScore(newScore + scorer.computeCost(connection, to));
           openSet.add(nextNode);
         }
       });

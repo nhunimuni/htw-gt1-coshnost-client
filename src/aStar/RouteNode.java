@@ -1,17 +1,19 @@
 package aStar;
 
-class RouteNode<T extends GraphNode> implements Comparable<RouteNode<T>> {
+import lenz.htw.coshnost.world.GraphNode;
 
-  private final T current;
-  private T previous;
+class RouteNode implements Comparable<RouteNode> {
+
+  private final GraphNode current;
+  private GraphNode previous;
   private double routeScore;
   private double estimatedScore;
 
-  RouteNode(T current) {
+  RouteNode(GraphNode current) {
     this(current, null, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
   }
 
-  RouteNode(T current, T previous, double routeScore, double estimatedScore) {
+  RouteNode(GraphNode current, GraphNode previous, double routeScore, double estimatedScore) {
     this.current = current;
     this.previous = previous;
     this.routeScore = routeScore;
@@ -29,15 +31,15 @@ class RouteNode<T extends GraphNode> implements Comparable<RouteNode<T>> {
     }
   }
 
-  public T getCurrent() {
+  public GraphNode getCurrent() {
     return current;
   }
 
-  public void setPrevious(T previous) {
+  public void setPrevious(GraphNode previous) {
     this.previous = previous;
   }
 
-  public T getPrevious() {
+  public GraphNode getPrevious() {
     return previous;
   }
 

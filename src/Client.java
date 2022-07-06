@@ -1,3 +1,5 @@
+import aStar.DefaultScorer;
+import aStar.RouteFinder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +35,10 @@ public class Client {
     System.out.println(graph[0].getOwner()); // wem gehört das Feld? (0,1,2 = player number, -1 = leer)
     System.out.println(graph[0].getX());*/ // Ortsvektor
     float[] pos = graph[0].getPosition();
+
+    RouteFinder routeFinder = new RouteFinder(new DefaultScorer());
+    List<GraphNode> route = routeFinder.findRoute(graph[0], graph[15]);
+    System.out.println("a star route" + route);
 
     GraphNode[] neighbors = graph[0].getNeighbors();    //immer genau 5 oder 6 Nachbarn
  

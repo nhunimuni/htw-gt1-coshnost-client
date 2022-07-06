@@ -1,6 +1,8 @@
 package aStar;
 
-public interface Scorer<T extends GraphNode> {
+import lenz.htw.coshnost.world.GraphNode;
 
-  double computeCost(T from, T to);
+public interface Scorer {
+
+  double computeCost(GraphNode from, GraphNode to);
 }
