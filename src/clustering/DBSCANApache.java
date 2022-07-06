@@ -27,10 +27,12 @@ public class DBSCANApache {
 		DBSCANClusterer<DataPoint> dbscan = new DBSCANClusterer<DataPoint>(maxRadius, minPoints, new DistanceMeasure() {
 			@Override
 			public double compute(double[] arg0, double[] arg1) throws DimensionMismatchException {
-				double ac = Math.abs(arg1[1] - arg0[1]);
-				double cb = Math.abs(arg1[0] - arg1[0]);
+				// euclidean distance 3d
+				double a = Math.pow(arg1[0] - arg0[0], 2);
+				double b = Math.pow(arg1[1] - arg0[1], 2);
+				double c = Math.pow(arg1[2] - arg0[2], 2);
 
-				return Math.hypot(ac, cb);
+				return Math.sqrt(a + b + c);
 			}
 		});
 		List<Cluster<DataPoint>> cluster = dbscan.cluster(points);

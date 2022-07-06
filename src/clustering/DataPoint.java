@@ -17,7 +17,7 @@ public class DataPoint implements Clusterable{
 
 	@Override
 	public double[] getPoint() {
-		double[] p = new double[]{node.getX(), node.getY()};
+		double[] p = new double[]{node.getX(), node.getY(), node.getZ()};
 		return p;
 	};
 }
