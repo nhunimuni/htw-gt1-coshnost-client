@@ -48,9 +48,9 @@ public class DBSCANApache {
 			cluster.add(new ClusterExtension(getCentroidPosition(c),c));
 		}
 
-		System.out.println("\n############ Number of Cluster: " + cluster.size());
+		// System.out.println("\n############ Number of Cluster: " + cluster.size());
 		for (Cluster<DataPoint> c : clusterGroups) {
-			plotCluster(c, false);
+			// plotCluster(c, false);
 		}
 
 		return cluster;

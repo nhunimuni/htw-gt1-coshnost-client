@@ -1,14 +1,17 @@
 import aStar.DefaultScorer;
 import aStar.RouteFinder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import clustering.ClusterExtension;
 import clustering.DBSCANApache;
 import clustering.DataFilter;
 import clustering.DataPoint;
+import java.util.Optional;
 import lenz.htw.coshnost.net.NetworkClient;
 import lenz.htw.coshnost.world.GraphNode;
+import util.Tuple;
 
 public class Client {
 
@@ -19,30 +22,8 @@ public class Client {
     NetworkClient client = new NetworkClient(null, "Teamname", "Juhu, ich habe gewonnen!");
 
     int myNumber = client.getMyPlayerNumber();
-    // client.getScore(0);
-    // client.getBotSpeed(0); //Konstanten
-
-    // float[] botDirection = client.getBotDirection(0); // vermutlich nicht
-    // notwendig
-    // client.changeMoveDirection(0, 0); // vermutlich nicht notwendig
-    // System.out.println(recentUpdate);
-    // System.out.println(myNumber);
-
-    GraphNode[] graph = client.getGraph(); // immer Größe 10242
-    /*
-     * System.out.println(graph[0].isBlocked()); // ist ein Graben oder nicht
-     * System.out.println(graph[0].getOwner()); // wem gehört das Feld? (0,1,2 =
-     * player number, -1 = leer)
-     * System.out.println(graph[0].getX());
-     */ // Ortsvektor
-    // float[] pos = graph[0].getPosition();
 
     RouteFinder routeFinder = new RouteFinder(new DefaultScorer());
-    List<GraphNode> route = routeFinder.findRoute(graph[0], graph[15]);
-    System.out.println("a star route" + route);
-
-    // GraphNode[] neighbors = graph[0].getNeighbors(); // immer genau 5 oder 6
-    // Nachbarn
 
     double radius = 0.04;
     DBSCANApache DBSCAN = new DBSCANApache(radius, 5);
@@ -61,9 +42,12 @@ public class Client {
 
       if (currentUpdateId != recentId) {
         recentId = currentUpdateId;
-        GraphNode[] netGraph = client.getGraph();
-        
-        if (recentId == 500) {
+        GraphNode[] graph = client.getGraph();
+
+        ArrayList<ArrayList<DataPoint>> allFilteredDataTypes = new ArrayList<>();
+        final Tuple targetForBot0 = new Tuple();
+
+        if (recentId % 100 == 1) {
           /*
            * ArrayList<DataPoint> playersP = FILTER.getPlayersNodes(myNumber, netGraph);
            * ArrayList<DataPoint> opponentP = FILTER.getOpponentsNodes(myNumber,
@@ -71,13 +55,15 @@ public class Client {
            * ArrayList<DataPoint> occupiedP = FILTER.getOccupiedNodes(myNumber, netGraph);
            * ArrayList<DataPoint> blankP = FILTER.getBlankNodes(netGraph);
            */
-          ArrayList<ArrayList<DataPoint>> allFilteredDataTypes = FILTER.getAllTypeOfNodes(myNumber, netGraph);
+          allFilteredDataTypes = FILTER.getAllTypeOfNodes(myNumber, graph);
 
-          System.out.println("\nMy Number: " + myNumber + "\n");
+          // System.out.println("\nMy Number: " + myNumber + "\n");
           // --------- DBSCAN- Measure execution time - start
           long startTime = System.nanoTime();
           List<ClusterExtension> dbscanCluster = DBSCAN.cluster(allFilteredDataTypes.get(0));
-          System.out.println("Centroid of Cluster 0: " + dbscanCluster.get(0).getCentroid());
+          if (dbscanCluster.size() > 0) {
+            // System.out.println("Centroid of Cluster 0: " + dbscanCluster.get(0).getCentroid());
+          }
           //List<ClusterExtension> dbscanCluster1 = DBSCAN.cluster(allFilteredDataTypes.get(1));
           //List<ClusterExtension> dbscanCluster2 = DBSCAN.cluster(allFilteredDataTypes.get(2));
           //<ClusterExtension> dbscanCluster3 = DBSCAN.cluster(allFilteredDataTypes.get(3));
@@ -86,8 +72,39 @@ public class Client {
           // List<Cluster<DataPoint>> dbscanCluster2 = DBSCANBlank.cluster(p2);
           long endTime = System.nanoTime();
           long duration = (endTime - startTime);
-          System.out.println("DBSCAN Elapsed Time in nano seconds: " + duration);
+          // System.out.println("DBSCAN Elapsed Time in nano seconds: " + duration);
           // --------- DBSCAN- Measure execution time - end
+
+          System.out.println("route" + targetForBot0.route.toString());
+          if (targetForBot0.cluster != null) {
+            System.out.println("centroid" + targetForBot0.cluster.getCentroid().toString());
+          }
+        }
+
+        if (recentId > 0 && allFilteredDataTypes.size() > 0 && targetForBot0.cluster == null) {
+          float[] bot0 = client.getBotPosition(myNumber, 0);
+          Optional<GraphNode> bot0Node = findGraphNodeByPosition(graph, bot0);
+          if (bot0.length > 0) {
+            System.out.println("bot0" + Arrays.toString(bot0));
+            System.out.println("bot0 node" + bot0Node);
+          }
+          List<ClusterExtension> emptyClusters = DBSCAN.cluster(allFilteredDataTypes.get(3));
+          if (bot0Node.isPresent() && emptyClusters.size() > 0) {
+            System.out.println("i'm in!" +  bot0Node);
+            emptyClusters.forEach(cluster -> {
+              List<Number> centroidList = cluster.getCentroid();
+              float[] centroidArray = new float[]{centroidList.get(0).floatValue(), centroidList.get(1).floatValue(), centroidList.get(2).floatValue()};
+              Optional<GraphNode> center = findGraphNodeByPosition(graph, centroidArray);
+              List<GraphNode> route;
+              if (center.isPresent()) {
+                route = routeFinder.findRoute(bot0Node.get(), center.get());
+                if (targetForBot0.route.size() == 0 || route.size() < targetForBot0.route.size()) {
+                  targetForBot0.cluster = cluster;
+                  targetForBot0.route = route;
+                }
+              }
+            });
+          }
 
           // --------- FuzzyKMeans - Measure execution time - start
           /*
@@ -103,10 +120,20 @@ public class Client {
            * System.out.println("FuzzyK Elapsed Time in nano seconds: " + duration2);
            * //--------- FuzzyKMeans - Measure execution time - end
            */
+        }
 
+        if (targetForBot0.route.size() > 0) {
+          GraphNode nextNode = targetForBot0.route.get(0);
+          client.changeMoveDirection(0, nextNode.x, nextNode.y, nextNode.z);
+          targetForBot0.route.remove(0);
         }
       }
     }
+  }
 
+  public static Optional<GraphNode> findGraphNodeByPosition(GraphNode[] graph, float[] position) {
+    return Arrays.stream(graph).filter(node -> {
+      return node.getX() == position[0] && node.getY() == position[1] && node.getZ() == position[2];
+    }).findFirst();
   }
 }
