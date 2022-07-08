@@ -36,33 +36,28 @@ public class Client {
     DBSCANApache PITHOLES = new DBSCANApache(0.09, 5);
     DataFilter FILTER = new DataFilter();
     long recentId = -1;
+
+    ArrayList<ArrayList<DataPoint>> allFilteredDataTypes = new ArrayList<>();
+    Tuple targetForBot0 = new Tuple();
+
     while (client.isGameRunning()) {
       long currentUpdateId = client.getMostRecentUpdateId();
 
       if (currentUpdateId != recentId) {
         recentId = currentUpdateId;
         GraphNode[] graph = client.getGraph();
-        ArrayList<ArrayList<DataPoint>> allFilteredDataTypes = new ArrayList<>();
-        Tuple targetForBot0 = new Tuple();
 
         if (recentId % 50 == 0) {
           allFilteredDataTypes = FILTER.getAllTypeOfNodes(myNumber, graph);
-
-          System.out.println("route" + targetForBot0.route.toString());
-          if (targetForBot0.cluster != null) {
-            System.out.println("centroid" + targetForBot0.cluster.getCentroid().toString());
-          }
         }
 
-        if (recentId > 0 && allFilteredDataTypes.size() > 0 && targetForBot0.cluster == null) {
+        System.out.println("route" + targetForBot0.route);
+        if (recentId > 0 && allFilteredDataTypes.size() > 0 && targetForBot0.route.size() == 0) {
           float[] bot0 = client.getBotPosition(myNumber, 0);
           GraphNode bot0Node = findGraphNodeByPosition(graph, bot0);
-          if (bot0.length > 0) {
-            System.out.println("bot0: " + Arrays.toString(bot0));
-          }
+
           List<ClusterExtension> emptyClusters = DBSCAN.cluster(allFilteredDataTypes.get(3));
           if (bot0Node != null && emptyClusters.size() > 0) {
-            System.out.println("I'm in! " + bot0Node);
             emptyClusters.forEach(cluster -> {
               List<Float> centroidList = cluster.getCentroid();
               float[] centroidArray = new float[centroidList.size()];
@@ -71,14 +66,12 @@ public class Client {
                 centroidArray[n] = centroidList.get(n);
               }
               GraphNode center = findGraphNodeByPosition(graph, centroidArray);
-              System.out.println("Center: " + Arrays.toString(center.getPosition()));
               List<GraphNode> route;
-              if (center != null) {
-                route = routeFinder.findRoute(bot0Node, center);
-                if (targetForBot0.route.size() == 0 || route.size() < targetForBot0.route.size()) {
-                  targetForBot0.cluster = cluster;
-                  targetForBot0.route = route;
-                }
+              route = routeFinder.findRoute(bot0Node, center);
+              if (targetForBot0.route.size() == 0 || route.size() < targetForBot0.route.size()) {
+                targetForBot0.cluster = cluster;
+                targetForBot0.route = route;
+                System.out.println("new target cluster" + cluster.getCentroid().toString());
               }
             });
           }
@@ -86,8 +79,10 @@ public class Client {
 
         if (targetForBot0.route.size() > 0) {
           GraphNode nextNode = targetForBot0.route.get(0);
+          System.out.println("next move " + nextNode.toString());
           client.changeMoveDirection(0, nextNode.x, nextNode.y, nextNode.z);
           targetForBot0.route.remove(0);
+          System.out.println("route after remove" + targetForBot0.route);
         }
       }
     }
@@ -95,7 +90,7 @@ public class Client {
 
   /**
    * Find a matching GraphNode on the graph net by the position
-   * 
+   *
    * @param graph
    * @param position
    * @return
@@ -107,7 +102,7 @@ public class Client {
 
   /**
    * Euclidean Distance 3D
-   * 
+   *
    * @param arg0
    * @param arg1
    * @return
