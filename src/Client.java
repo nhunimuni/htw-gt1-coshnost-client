@@ -20,6 +20,7 @@ public class Client {
   public static void main(String[] args) {
     NetworkClient client = new NetworkClient(null, "Minu", "uwu");
     int myNumber = client.getMyPlayerNumber();
+    System.out.println(myNumber);
     RouteFinder routeFinder = new RouteFinder(new DefaultScorer());
 
     double radius = 0.05;
@@ -42,7 +43,7 @@ public class Client {
           allFilteredDataTypes = FILTER.getAllTypeOfNodes(myNumber, graph);
         }
 
-        if (recentId > 0 && allFilteredDataTypes.size() > 0 && targetForBot0.route.size() == 0) {
+        if (recentId > 0 && allFilteredDataTypes.size() > 0) {
           GraphNode bot0Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 0));
           GraphNode bot1Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 1));
           GraphNode bot2Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 2));
@@ -50,6 +51,7 @@ public class Client {
           List<ClusterExtension> occupiedCluster = DBSCAN.cluster(allFilteredDataTypes.get(2));
           List<ClusterExtension> opponentCluster = DBSCAN.cluster(allFilteredDataTypes.get(1));
 
+          client.changeMoveDirection(2, 0, 0, 0);
           // BOT 0
           // Mainly empty cluster but should also target occupied cluster!
           if (bot0Node != null && emptyClusters.size() > 0) {
@@ -73,7 +75,9 @@ public class Client {
              * }
              * });
              */
-            Tuple plannedMove = planMove(graph, emptyClusters, routeFinder, bot0Node, targetForBot0);
+            List<ClusterExtension> joinedCluster = Stream.concat(occupiedCluster.stream(), emptyClusters.stream())
+                .toList();
+            Tuple plannedMove = planMove(graph, joinedCluster, routeFinder, bot0Node, targetForBot0);
             targetForBot0.cluster = plannedMove.cluster;
             targetForBot0.route = plannedMove.route;
           }
@@ -81,8 +85,9 @@ public class Client {
           // BOT 1 - Strong but slow
           // Cluster of occupied and empty and find die closest one
           if (bot1Node != null && emptyClusters.size() > 0) {
-            List<ClusterExtension> joinedCluster = Stream.concat(emptyClusters.stream(), occupiedCluster.stream())
+            List<ClusterExtension> joinedCluster = Stream.concat(occupiedCluster.stream(), emptyClusters.stream())
                 .toList();
+            System.out.println("CLUSTER: " + joinedCluster.toString());
             Tuple plannedMove = planMove(graph, joinedCluster, routeFinder, bot1Node, targetForBot1);
             targetForBot1.cluster = plannedMove.cluster;
             targetForBot1.route = plannedMove.route;
@@ -95,11 +100,11 @@ public class Client {
         }
 
         if (targetForBot0.route.size() > 0) {
-          setMove(targetForBot0, client);
+          setMove(targetForBot0, client, 0);
         }
 
         if (targetForBot1.route.size() > 0) {
-          setMove(targetForBot1, client);
+          setMove(targetForBot1, client, 1);
         }
       }
     }
@@ -140,9 +145,16 @@ public class Client {
   /**
    * Set move for bot.
    */
-  public static void setMove(Tuple target, NetworkClient client) {
+  public static void setMove(Tuple target, NetworkClient client, int botNr) {
     GraphNode nextNode = target.route.get(0);
-    client.changeMoveDirection(0, nextNode.x, nextNode.y, nextNode.z);
+    /*
+     * if (nextNode.isBlocked()) {
+     * System.out.println(nextNode.getPosition().toString());
+     * System.out.println(nextNode.blocked);
+     * }
+     */
+    // System.out.println("MOVE: " + Arrays.toString(nextNode.getPosition()));
+    client.changeMoveDirection(botNr, nextNode.x, nextNode.y, nextNode.z);
     target.route.remove(0);
   }
 
