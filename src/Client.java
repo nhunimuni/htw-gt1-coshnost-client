@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 import clustering.ClusterExtension;
 import clustering.DBSCANApache;
@@ -78,9 +79,11 @@ public class Client {
           }
 
           // BOT 1 - Strong but slow
-          // Cluster of other oponnents and empty
-          if (bot1Node != null && occupiedCluster.size() > 0) {
-            Tuple plannedMove = planMove(graph, occupiedCluster, routeFinder, bot1Node, targetForBot1);
+          // Cluster of occupied and empty and find die closest one
+          if (bot1Node != null && emptyClusters.size() > 0) {
+            List<ClusterExtension> joinedCluster = Stream.concat(emptyClusters.stream(), occupiedCluster.stream())
+                .toList();
+            Tuple plannedMove = planMove(graph, joinedCluster, routeFinder, bot1Node, targetForBot1);
             targetForBot1.cluster = plannedMove.cluster;
             targetForBot1.route = plannedMove.route;
           }
