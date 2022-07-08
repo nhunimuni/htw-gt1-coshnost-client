@@ -1,4 +1,5 @@
-import aStar.DefaultScorer;
+import aStar.AvoidEnemyScorer;
+import aStar.ConfrontEnemyScorer;
 import aStar.RouteFinder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,7 +22,8 @@ public class Client {
     NetworkClient client = new NetworkClient(null, "Minu", "uwu");
     int myNumber = client.getMyPlayerNumber();
     System.out.println(myNumber);
-    RouteFinder routeFinder = new RouteFinder(new DefaultScorer());
+    RouteFinder avoidingRouteFinder = new RouteFinder(new AvoidEnemyScorer());
+    RouteFinder confrontingRouteFinder = new RouteFinder(new ConfrontEnemyScorer());
 
     double radius = 0.05;
     DBSCANApache DBSCAN = new DBSCANApache(radius, 5);
@@ -48,47 +50,23 @@ public class Client {
           GraphNode bot1Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 1));
           GraphNode bot2Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 2));
           List<ClusterExtension> emptyClusters = DBSCAN.cluster(allFilteredDataTypes.get(3));
-          List<ClusterExtension> occupiedCluster = DBSCAN.cluster(allFilteredDataTypes.get(2));
-          List<ClusterExtension> opponentCluster = DBSCAN.cluster(allFilteredDataTypes.get(1));
+          List<ClusterExtension> occupiedClusters = DBSCAN.cluster(allFilteredDataTypes.get(2));
+          List<ClusterExtension> opponentClusters = DBSCAN.cluster(allFilteredDataTypes.get(1));
 
-          client.changeMoveDirection(2, 0, 0, 0);
           // BOT 0
           // Mainly empty cluster but should also target occupied cluster!
           if (bot0Node != null && emptyClusters.size() > 0) {
-            /*
-             * emptyClusters.forEach(cluster -> {
-             * List<Float> centroidList = cluster.getCentroid();
-             * float[] centroidArray = new float[centroidList.size()];
-             * for (int n = 0; n < centroidList.size(); n++) {
-             * centroidArray[n] = centroidList.get(n);
-             * }
-             * GraphNode center = findGraphNodeByPosition(graph, centroidArray);
-             * List<GraphNode> route;
-             * route = routeFinder.findRoute(bot0Node, center);
-             * 
-             * // Find cluster nearest to our bot
-             * if (targetForBot0.route.size() == 0 || route.size() <
-             * targetForBot0.route.size()) {
-             * targetForBot0.cluster = cluster;
-             * targetForBot0.route = route;
-             * System.out.println("new target cluster" + cluster.getCentroid().toString());
-             * }
-             * });
-             */
-            List<ClusterExtension> joinedCluster = Stream.concat(occupiedCluster.stream(), emptyClusters.stream())
+            List<ClusterExtension> joinedCluster = Stream.concat(occupiedClusters.stream(), emptyClusters.stream())
                 .toList();
-            Tuple plannedMove = planMove(graph, joinedCluster, routeFinder, bot0Node, targetForBot0);
+            Tuple plannedMove = planMove(myNumber, graph, joinedCluster, avoidingRouteFinder, bot0Node, targetForBot0);
             targetForBot0.cluster = plannedMove.cluster;
             targetForBot0.route = plannedMove.route;
           }
 
           // BOT 1 - Strong but slow
-          // Cluster of occupied and empty and find die closest one
-          if (bot1Node != null && emptyClusters.size() > 0) {
-            List<ClusterExtension> joinedCluster = Stream.concat(occupiedCluster.stream(), emptyClusters.stream())
-                .toList();
-            System.out.println("CLUSTER: " + joinedCluster.toString());
-            Tuple plannedMove = planMove(graph, joinedCluster, routeFinder, bot1Node, targetForBot1);
+          // Cluster of occupied and empty and find the closest one
+          if (bot1Node != null && occupiedClusters.size() > 0) {
+            Tuple plannedMove = planMove(myNumber, graph, occupiedClusters, confrontingRouteFinder, bot1Node, targetForBot1);
             targetForBot1.cluster = plannedMove.cluster;
             targetForBot1.route = plannedMove.route;
           }
@@ -97,6 +75,17 @@ public class Client {
           // Cluster of other oponnents
           // Maybe also follow them at some point?
           // Also remove own occupied nodes from path
+          if (bot2Node != null) {
+            int[] players = new int[]{0, 1, 2};
+            players = Arrays.stream(players).filter(player -> player != myNumber).toArray();
+            Arrays.stream(players).forEach(player -> {
+              float[] slowBot = client.getBotPosition(player, 1);
+              List<GraphNode> route = confrontingRouteFinder.findRoute(myNumber, bot2Node, findGraphNodeByPosition(graph, slowBot), true);
+              if (targetForBot2.route.size() == 0 || route.size() < targetForBot2.route.size()) {
+                targetForBot2.route = route;
+              }
+            });
+          }
         }
 
         if (targetForBot0.route.size() > 0) {
@@ -106,12 +95,16 @@ public class Client {
         if (targetForBot1.route.size() > 0) {
           setMove(targetForBot1, client, 1);
         }
+
+        if (targetForBot2.route.size() > 0) {
+          setMove(targetForBot2, client, 2);
+        }
       }
     }
   }
 
   /**
-   * 
+   *
    * @param graph
    * @param clusters
    * @param routeFinder
@@ -119,7 +112,7 @@ public class Client {
    * @param botTargetNode
    * @return
    */
-  public static Tuple planMove(GraphNode[] graph, List<ClusterExtension> clusters, RouteFinder routeFinder,
+  public static Tuple planMove(int myNumber, GraphNode[] graph, List<ClusterExtension> clusters, RouteFinder routeFinder,
       GraphNode botStartNode, Tuple botTargetNode) {
     Tuple targetNode = new Tuple();
     clusters.forEach(cluster -> {
@@ -130,7 +123,7 @@ public class Client {
       }
       GraphNode center = findGraphNodeByPosition(graph, centroidArray);
       List<GraphNode> route;
-      route = routeFinder.findRoute(botStartNode, center);
+      route = routeFinder.findRoute(myNumber, botStartNode, center, false);
 
       // Find cluster nearest to our bot
       if (botTargetNode.route.size() == 0 || route.size() < botTargetNode.route.size()) {

@@ -4,5 +4,5 @@ import lenz.htw.coshnost.world.GraphNode;
 
 public interface Scorer {
 
-  double computeCost(GraphNode from, GraphNode to);
+  double computeCost(GraphNode from, GraphNode to, int myNumber);
 }

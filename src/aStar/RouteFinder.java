@@ -17,11 +17,11 @@ public class RouteFinder {
     this.scorer = scorer;
   }
 
-  public List<GraphNode> findRoute(GraphNode from, GraphNode to) {
+  public List<GraphNode> findRoute(int myNumber, GraphNode from, GraphNode to, boolean canPassHoles) {
     Queue<RouteNode> openSet = new PriorityQueue<>();
     Map<GraphNode, RouteNode> allNodes = new HashMap<>();
 
-    RouteNode start = new RouteNode(from, null, 0d, scorer.computeCost(from, to));
+    RouteNode start = new RouteNode(from, null, 0d, scorer.computeCost(from, to, myNumber));
     openSet.add(start);
     allNodes.put(from, start);
 
@@ -40,15 +40,17 @@ public class RouteFinder {
 
       // otherwise continue from connections of current
       Arrays.stream(next.getCurrent().getNeighbors()).forEach(connection -> {
-        RouteNode nextNode = allNodes.getOrDefault(connection, new RouteNode(connection));
-        allNodes.put(connection, nextNode);
+        if (canPassHoles || !connection.isBlocked()) {
+          RouteNode nextNode = allNodes.getOrDefault(connection, new RouteNode(connection));
+          allNodes.put(connection, nextNode);
 
-        double newScore = next.getRouteScore() + scorer.computeCost(next.getCurrent(), connection);
-        if (!connection.isBlocked() && newScore < nextNode.getRouteScore()) {
-          nextNode.setPrevious(next.getCurrent());
-          nextNode.setRouteScore(newScore);
-          nextNode.setEstimatedScore(newScore + scorer.computeCost(connection, to));
-          openSet.add(nextNode);
+          double newScore = next.getRouteScore() + scorer.computeCost(next.getCurrent(), connection, myNumber);
+          if (newScore < nextNode.getRouteScore()) {
+            nextNode.setPrevious(next.getCurrent());
+            nextNode.setRouteScore(newScore);
+            nextNode.setEstimatedScore(newScore + scorer.computeCost(connection, to, myNumber));
+            openSet.add(nextNode);
+          }
         }
       });
     }
