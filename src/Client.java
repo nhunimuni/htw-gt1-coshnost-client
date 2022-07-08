@@ -9,65 +9,59 @@ import clustering.ClusterExtension;
 import clustering.DBSCANApache;
 import clustering.DataFilter;
 import clustering.DataPoint;
-import java.util.Optional;
 import lenz.htw.coshnost.net.NetworkClient;
 import lenz.htw.coshnost.world.GraphNode;
 import util.Tuple;
 
 public class Client {
+  // Start Server: java -Djava.library.path=lib/native -jar coshnost.jar
 
   public static void main(String[] args) {
-
-    // Start Server: java -Djava.library.path=lib/native -jar coshnost.jar
-
-    NetworkClient client = new NetworkClient(null, "Teamname", "Juhu, ich habe gewonnen!");
-
+    NetworkClient client = new NetworkClient(null, "Minu", "uwu");
     int myNumber = client.getMyPlayerNumber();
-
     RouteFinder routeFinder = new RouteFinder(new DefaultScorer());
 
     double radius = 0.05;
     DBSCANApache DBSCAN = new DBSCANApache(radius, 5);
-    /*
-     * DBSCANApache DBSCAN1 = new DBSCANApache(radius, 5);
-     * DBSCANApache DBSCAN2 = new DBSCANApache(radius, 5);
-     * DBSCANApache DBSCAN3 = new DBSCANApache(radius, 5);
-     */
-    DBSCANApache PITHOLES = new DBSCANApache(0.09, 5);
     DataFilter FILTER = new DataFilter();
     long recentId = -1;
 
     ArrayList<ArrayList<DataPoint>> allFilteredDataTypes = new ArrayList<>();
-    Tuple targetForBot0 = new Tuple();
+    Tuple targetForBot0 = new Tuple(); // One colored - fast
+    Tuple targetForBot1 = new Tuple(); // Dotted - strong but slow
+    Tuple targetForBot2 = new Tuple(); // Striped - Deletion
 
     while (client.isGameRunning()) {
       long currentUpdateId = client.getMostRecentUpdateId();
-
       if (currentUpdateId != recentId) {
         recentId = currentUpdateId;
         GraphNode[] graph = client.getGraph();
 
-        if (recentId % 50 == 0) {
+        if (recentId % 50 == 1) {
           allFilteredDataTypes = FILTER.getAllTypeOfNodes(myNumber, graph);
         }
 
-        System.out.println("route" + targetForBot0.route);
         if (recentId > 0 && allFilteredDataTypes.size() > 0 && targetForBot0.route.size() == 0) {
-          float[] bot0 = client.getBotPosition(myNumber, 0);
-          GraphNode bot0Node = findGraphNodeByPosition(graph, bot0);
-
+          GraphNode bot0Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 0));
+          GraphNode bot1Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 1));
+          GraphNode bot2Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 2));
           List<ClusterExtension> emptyClusters = DBSCAN.cluster(allFilteredDataTypes.get(3));
+          List<ClusterExtension> occupiedCluster = DBSCAN.cluster(allFilteredDataTypes.get(2));
+          List<ClusterExtension> opponentCluster = DBSCAN.cluster(allFilteredDataTypes.get(1));
+
+          // BOT 0 - Deletion
           if (bot0Node != null && emptyClusters.size() > 0) {
             emptyClusters.forEach(cluster -> {
               List<Float> centroidList = cluster.getCentroid();
               float[] centroidArray = new float[centroidList.size()];
-              // System.out.println("Centroid Array: " + Arrays.toString(centroidArray));
               for (int n = 0; n < centroidList.size(); n++) {
                 centroidArray[n] = centroidList.get(n);
               }
               GraphNode center = findGraphNodeByPosition(graph, centroidArray);
               List<GraphNode> route;
               route = routeFinder.findRoute(bot0Node, center);
+
+              // Find cluster nearest to our bot
               if (targetForBot0.route.size() == 0 || route.size() < targetForBot0.route.size()) {
                 targetForBot0.cluster = cluster;
                 targetForBot0.route = route;
@@ -75,17 +69,30 @@ public class Client {
               }
             });
           }
+
+          // BOT 1 - Strong but slow
+          // Cluster of other oponnents and empty
+
+          // BOT 2 - Deletion
+          // Cluster of other oponnents
+          // Maybe also follow them at some point?
+          // Also remove own occupied nodes from path
         }
 
         if (targetForBot0.route.size() > 0) {
-          GraphNode nextNode = targetForBot0.route.get(0);
-          System.out.println("next move " + nextNode.toString());
-          client.changeMoveDirection(0, nextNode.x, nextNode.y, nextNode.z);
-          targetForBot0.route.remove(0);
-          System.out.println("route after remove" + targetForBot0.route);
+          setMove(targetForBot0, client);
         }
       }
     }
+  }
+
+  /**
+   * Set move for bot.
+   */
+  public static void setMove(Tuple target, NetworkClient client) {
+    GraphNode nextNode = target.route.get(0);
+    client.changeMoveDirection(0, nextNode.x, nextNode.y, nextNode.z);
+    target.route.remove(0);
   }
 
   /**
