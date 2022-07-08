@@ -49,29 +49,41 @@ public class Client {
           List<ClusterExtension> occupiedCluster = DBSCAN.cluster(allFilteredDataTypes.get(2));
           List<ClusterExtension> opponentCluster = DBSCAN.cluster(allFilteredDataTypes.get(1));
 
-          // BOT 0 - Deletion
+          // BOT 0
+          // Mainly empty cluster but should also target occupied cluster!
           if (bot0Node != null && emptyClusters.size() > 0) {
-            emptyClusters.forEach(cluster -> {
-              List<Float> centroidList = cluster.getCentroid();
-              float[] centroidArray = new float[centroidList.size()];
-              for (int n = 0; n < centroidList.size(); n++) {
-                centroidArray[n] = centroidList.get(n);
-              }
-              GraphNode center = findGraphNodeByPosition(graph, centroidArray);
-              List<GraphNode> route;
-              route = routeFinder.findRoute(bot0Node, center);
-
-              // Find cluster nearest to our bot
-              if (targetForBot0.route.size() == 0 || route.size() < targetForBot0.route.size()) {
-                targetForBot0.cluster = cluster;
-                targetForBot0.route = route;
-                System.out.println("new target cluster" + cluster.getCentroid().toString());
-              }
-            });
+            /*
+             * emptyClusters.forEach(cluster -> {
+             * List<Float> centroidList = cluster.getCentroid();
+             * float[] centroidArray = new float[centroidList.size()];
+             * for (int n = 0; n < centroidList.size(); n++) {
+             * centroidArray[n] = centroidList.get(n);
+             * }
+             * GraphNode center = findGraphNodeByPosition(graph, centroidArray);
+             * List<GraphNode> route;
+             * route = routeFinder.findRoute(bot0Node, center);
+             * 
+             * // Find cluster nearest to our bot
+             * if (targetForBot0.route.size() == 0 || route.size() <
+             * targetForBot0.route.size()) {
+             * targetForBot0.cluster = cluster;
+             * targetForBot0.route = route;
+             * System.out.println("new target cluster" + cluster.getCentroid().toString());
+             * }
+             * });
+             */
+            Tuple plannedMove = planMove(graph, emptyClusters, routeFinder, bot0Node, targetForBot0);
+            targetForBot0.cluster = plannedMove.cluster;
+            targetForBot0.route = plannedMove.route;
           }
 
           // BOT 1 - Strong but slow
           // Cluster of other oponnents and empty
+          if (bot1Node != null && occupiedCluster.size() > 0) {
+            Tuple plannedMove = planMove(graph, occupiedCluster, routeFinder, bot1Node, targetForBot1);
+            targetForBot1.cluster = plannedMove.cluster;
+            targetForBot1.route = plannedMove.route;
+          }
 
           // BOT 2 - Deletion
           // Cluster of other oponnents
@@ -82,8 +94,44 @@ public class Client {
         if (targetForBot0.route.size() > 0) {
           setMove(targetForBot0, client);
         }
+
+        if (targetForBot1.route.size() > 0) {
+          setMove(targetForBot1, client);
+        }
       }
     }
+  }
+
+  /**
+   * 
+   * @param graph
+   * @param clusters
+   * @param routeFinder
+   * @param botStartNode
+   * @param botTargetNode
+   * @return
+   */
+  public static Tuple planMove(GraphNode[] graph, List<ClusterExtension> clusters, RouteFinder routeFinder,
+      GraphNode botStartNode, Tuple botTargetNode) {
+    Tuple targetNode = new Tuple();
+    clusters.forEach(cluster -> {
+      List<Float> centroidList = cluster.getCentroid();
+      float[] centroidArray = new float[centroidList.size()];
+      for (int n = 0; n < centroidList.size(); n++) {
+        centroidArray[n] = centroidList.get(n);
+      }
+      GraphNode center = findGraphNodeByPosition(graph, centroidArray);
+      List<GraphNode> route;
+      route = routeFinder.findRoute(botStartNode, center);
+
+      // Find cluster nearest to our bot
+      if (botTargetNode.route.size() == 0 || route.size() < botTargetNode.route.size()) {
+        targetNode.cluster = cluster;
+        targetNode.route = route;
+      }
+    });
+
+    return targetNode;
   }
 
   /**
