@@ -49,13 +49,13 @@ public class Client {
           GraphNode bot0Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 0));
           GraphNode bot1Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 1));
           GraphNode bot2Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 2));
-          List<ClusterExtension> emptyClusters = DBSCAN.cluster(allFilteredDataTypes.get(3));
-          List<ClusterExtension> occupiedClusters = DBSCAN.cluster(allFilteredDataTypes.get(2));
           List<ClusterExtension> opponentClusters = DBSCAN.cluster(allFilteredDataTypes.get(1));
+          List<ClusterExtension> occupiedClusters = DBSCAN.cluster(allFilteredDataTypes.get(2));
+          List<ClusterExtension> emptyClusters = DBSCAN.cluster(allFilteredDataTypes.get(3));
 
           // BOT 0
           // Mainly empty cluster but should also target occupied cluster!
-          if (bot0Node != null && emptyClusters.size() > 0) {
+          if (bot0Node != null && targetForBot0.route.size() == 0) {
             List<ClusterExtension> joinedCluster = Stream.concat(occupiedClusters.stream(), emptyClusters.stream())
                 .toList();
             Tuple plannedMove = planMove(myNumber, graph, joinedCluster, avoidingRouteFinder, bot0Node, targetForBot0);
@@ -64,29 +64,30 @@ public class Client {
           }
 
           // BOT 1 - Strong but slow
-          // Cluster of occupied and empty and find the closest one
-          if (bot1Node != null && occupiedClusters.size() > 0) {
-            Tuple plannedMove = planMove(myNumber, graph, occupiedClusters, confrontingRouteFinder, bot1Node,
+          // enemy occupied and empty clusters, find the closest one
+          if (bot1Node != null && targetForBot1.route.size() == 0) {
+            Tuple plannedMove = planMove(myNumber, graph, opponentClusters, confrontingRouteFinder, bot1Node,
                 targetForBot1);
             targetForBot1.cluster = plannedMove.cluster;
             targetForBot1.route = plannedMove.route;
           }
 
           // BOT 2 - Deletion
-          // Cluster of other oponnents
+          // Follows enemy positions
           // Maybe also follow them at some point?
           // Also remove own occupied nodes from path
-          if (bot2Node != null) {
+          if (bot2Node != null && targetForBot2.route.size() == 0) {
             int[] players = new int[]{0, 1, 2};
             players = Arrays.stream(players).filter(player -> player != myNumber).toArray();
-            Arrays.stream(players).forEach(player -> {
-              float[] slowBot = client.getBotPosition(player, 1);
-              List<GraphNode> route = confrontingRouteFinder.findRoute(myNumber, bot2Node,
-                  findGraphNodeByPosition(graph, slowBot), true);
-              if (targetForBot2.route.size() == 0 || route.size() < targetForBot2.route.size()) {
-                targetForBot2.route = route;
-              }
-            });
+            int enemy1Score = client.getScore(players[0]);
+            int enemy2Score = client.getScore(players[1]);
+            int winningEnemy = players[0];
+            if (enemy1Score < enemy2Score) {
+              winningEnemy = players[1];
+            }
+            float[] fastBot = client.getBotPosition(winningEnemy, 0);
+            targetForBot2.route = confrontingRouteFinder.findRoute(myNumber, bot2Node,
+                findGraphNodeByPosition(graph, fastBot), true);
           }
         }
 
@@ -141,13 +142,12 @@ public class Client {
    * Set move for bot.
    */
   public static void setMove(Tuple target, NetworkClient client, int botNr) {
-    int lastIndex = target.route.size() - 1;
-    GraphNode nextNode = target.route.get(lastIndex);
+    GraphNode nextNode = target.route.get(0);
     if (nextNode.isBlocked()) {
       System.out.println("BLOCKED");
     }
     client.changeMoveDirection(botNr, nextNode.x, nextNode.y, nextNode.z);
-    target.route.remove(lastIndex);
+    target.route.remove(0);
   }
 
   /**

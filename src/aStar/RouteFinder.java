@@ -18,6 +18,13 @@ public class RouteFinder {
   }
 
   public List<GraphNode> findRoute(int myNumber, GraphNode from, GraphNode to, boolean canPassHoles) {
+    GraphNode[] neighbors = from.getNeighbors();
+    GraphNode[] unblockedNeighbors = Arrays.stream(neighbors).filter(neighbor -> !neighbor.isBlocked()).toArray(GraphNode[]::new);
+    GraphNode[] blockedNeighbors = Arrays.stream(neighbors).filter(GraphNode::isBlocked).toArray(GraphNode[]::new);
+    if (blockedNeighbors.length > 0) {
+      return List.of(unblockedNeighbors[0]);
+    }
+
     Queue<RouteNode> openSet = new PriorityQueue<>();
     Map<GraphNode, RouteNode> allNodes = new HashMap<>();
 
