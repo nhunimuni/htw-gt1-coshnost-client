@@ -22,7 +22,7 @@ public class RouteFinder {
     GraphNode[] unblockedNeighbors = Arrays.stream(neighbors).filter(neighbor -> !neighbor.isBlocked()).toArray(GraphNode[]::new);
     GraphNode[] blockedNeighbors = Arrays.stream(neighbors).filter(GraphNode::isBlocked).toArray(GraphNode[]::new);
     if (blockedNeighbors.length > 0) {
-      return List.of(unblockedNeighbors[0]);
+      return new ArrayList<>(List.of(unblockedNeighbors[0]));
     }
 
     Queue<RouteNode> openSet = new PriorityQueue<>();
