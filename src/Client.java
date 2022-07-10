@@ -66,7 +66,8 @@ public class Client {
           // BOT 1 - Strong but slow
           // Cluster of occupied and empty and find the closest one
           if (bot1Node != null && occupiedClusters.size() > 0) {
-            Tuple plannedMove = planMove(myNumber, graph, occupiedClusters, confrontingRouteFinder, bot1Node, targetForBot1);
+            Tuple plannedMove = planMove(myNumber, graph, occupiedClusters, confrontingRouteFinder, bot1Node,
+                targetForBot1);
             targetForBot1.cluster = plannedMove.cluster;
             targetForBot1.route = plannedMove.route;
           }
@@ -80,7 +81,8 @@ public class Client {
             players = Arrays.stream(players).filter(player -> player != myNumber).toArray();
             Arrays.stream(players).forEach(player -> {
               float[] slowBot = client.getBotPosition(player, 1);
-              List<GraphNode> route = confrontingRouteFinder.findRoute(myNumber, bot2Node, findGraphNodeByPosition(graph, slowBot), true);
+              List<GraphNode> route = confrontingRouteFinder.findRoute(myNumber, bot2Node,
+                  findGraphNodeByPosition(graph, slowBot), true);
               if (targetForBot2.route.size() == 0 || route.size() < targetForBot2.route.size()) {
                 targetForBot2.route = route;
               }
@@ -104,7 +106,6 @@ public class Client {
   }
 
   /**
-   *
    * @param graph
    * @param clusters
    * @param routeFinder
@@ -112,7 +113,8 @@ public class Client {
    * @param botTargetNode
    * @return
    */
-  public static Tuple planMove(int myNumber, GraphNode[] graph, List<ClusterExtension> clusters, RouteFinder routeFinder,
+  public static Tuple planMove(int myNumber, GraphNode[] graph, List<ClusterExtension> clusters,
+      RouteFinder routeFinder,
       GraphNode botStartNode, Tuple botTargetNode) {
     Tuple targetNode = new Tuple();
     clusters.forEach(cluster -> {
@@ -139,16 +141,13 @@ public class Client {
    * Set move for bot.
    */
   public static void setMove(Tuple target, NetworkClient client, int botNr) {
-    GraphNode nextNode = target.route.get(0);
-    /*
-     * if (nextNode.isBlocked()) {
-     * System.out.println(nextNode.getPosition().toString());
-     * System.out.println(nextNode.blocked);
-     * }
-     */
-    // System.out.println("MOVE: " + Arrays.toString(nextNode.getPosition()));
+    int lastIndex = target.route.size() - 1;
+    GraphNode nextNode = target.route.get(lastIndex);
+    if (nextNode.isBlocked()) {
+      System.out.println("BLOCKED");
+    }
     client.changeMoveDirection(botNr, nextNode.x, nextNode.y, nextNode.z);
-    target.route.remove(0);
+    target.route.remove(lastIndex);
   }
 
   /**
