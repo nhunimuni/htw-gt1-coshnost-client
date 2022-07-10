@@ -64,7 +64,7 @@ public class Client {
           }
 
           // BOT 1 - Strong but slow
-          // enemy occupied and empty clusters, find the closest one
+          // opponnent cluster
           if (bot1Node != null && targetForBot1.route.size() == 0) {
             Tuple plannedMove = planMove(myNumber, graph, opponentClusters, confrontingRouteFinder, bot1Node,
                 targetForBot1);
@@ -77,7 +77,7 @@ public class Client {
           // Maybe also follow them at some point?
           // Also remove own occupied nodes from path
           if (bot2Node != null && targetForBot2.route.size() == 0) {
-            int[] players = new int[]{0, 1, 2};
+            int[] players = new int[] { 0, 1, 2 };
             players = Arrays.stream(players).filter(player -> player != myNumber).toArray();
             int enemy1Score = client.getScore(players[0]);
             int enemy2Score = client.getScore(players[1]);
@@ -145,8 +145,21 @@ public class Client {
     GraphNode nextNode = target.route.get(0);
     if (nextNode.isBlocked()) {
       System.out.println("BLOCKED");
+      GraphNode[] n = nextNode.getNeighbors();
+      GraphNode nextUnblockedNode = null;
+      boolean loopStop = true;
+      int counter = 0;
+      while (loopStop) {
+        if (!n[counter].isBlocked()) {
+          nextUnblockedNode = n[counter];
+          loopStop = false;
+        }
+      }
+      System.out.println(nextUnblockedNode.toString());
+      client.changeMoveDirection(botNr, nextUnblockedNode.x, nextUnblockedNode.y, nextUnblockedNode.z);
+    } else {
+      client.changeMoveDirection(botNr, nextNode.x, nextNode.y, nextNode.z);
     }
-    client.changeMoveDirection(botNr, nextNode.x, nextNode.y, nextNode.z);
     target.route.remove(0);
   }
 
