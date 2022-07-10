@@ -35,7 +35,7 @@ public class RouteFinder {
     while (!openSet.isEmpty()) {
       RouteNode next = openSet.poll();
       // if current is target, return full route
-      if (next.getCurrent().equals(to)) {
+      if (next.getCurrent().equals(to) || allNodes.size() > 40) {
         List<GraphNode> route = new ArrayList<>();
         RouteNode current = next;
         while (current != null) {
@@ -47,15 +47,17 @@ public class RouteFinder {
 
       // otherwise continue from connections of current
       Arrays.stream(next.getCurrent().getNeighbors()).forEach(connection -> {
-        RouteNode nextNode = allNodes.getOrDefault(connection, new RouteNode(connection));
-        allNodes.put(connection, nextNode);
+        if (canPassHoles || !connection.isBlocked()) {
+          RouteNode nextNode = allNodes.getOrDefault(connection, new RouteNode(connection));
+          allNodes.put(connection, nextNode);
 
-        double newScore = next.getRouteScore() + scorer.computeCost(next.getCurrent(), connection, myNumber);
-        if ((canPassHoles || !connection.isBlocked()) && newScore < nextNode.getRouteScore()) {
-          nextNode.setPrevious(next.getCurrent());
-          nextNode.setRouteScore(newScore);
-          nextNode.setEstimatedScore(newScore + scorer.computeCost(connection, to, myNumber));
-          openSet.add(nextNode);
+          double newScore = next.getRouteScore() + scorer.computeCost(next.getCurrent(), connection, myNumber);
+          if (newScore < nextNode.getRouteScore()) {
+            nextNode.setPrevious(next.getCurrent());
+            nextNode.setRouteScore(newScore);
+            nextNode.setEstimatedScore(newScore + scorer.computeCost(connection, to, myNumber));
+            openSet.add(nextNode);
+          }
         }
       });
     }
