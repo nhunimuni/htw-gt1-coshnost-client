@@ -30,7 +30,8 @@ public class Client {
     DataFilter FILTER = new DataFilter();
     long recentId = -1;
 
-    ArrayList<ArrayList<DataPoint>> allFilteredDataTypes = new ArrayList<>();
+    ArrayList<ArrayList<DataPoint>> allFilteredDataTypes0 = new ArrayList<>();
+    ArrayList<ArrayList<DataPoint>> allFilteredDataTypes1 = new ArrayList<>();
     Tuple targetForBot0 = new Tuple(); // One colored - fast
     Tuple targetForBot1 = new Tuple(); // Dotted - strong but slow
     Tuple targetForBot2 = new Tuple(); // Striped - Deletion
@@ -41,17 +42,21 @@ public class Client {
         recentId = currentUpdateId;
         GraphNode[] graph = client.getGraph();
 
-        if (recentId % 50 == 1) {
-          allFilteredDataTypes = FILTER.getAllTypeOfNodes(myNumber, graph);
+        if (recentId % 80 == 1) {
+          allFilteredDataTypes0 = FILTER.getAllTypeOfNodes(myNumber, graph);
+        }
+        if (recentId % 120 == 1) {
+          allFilteredDataTypes1 = FILTER.getAllTypeOfNodes(myNumber, graph);
         }
 
-        if (recentId > 0 && allFilteredDataTypes.size() > 0) {
+        if (recentId > 0 && allFilteredDataTypes0.size() > 0 && allFilteredDataTypes1.size() > 0) {
           GraphNode bot0Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 0));
           GraphNode bot1Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 1));
           GraphNode bot2Node = findGraphNodeByPosition(graph, client.getBotPosition(myNumber, 2));
-          List<ClusterExtension> opponentClusters = DBSCAN.cluster(allFilteredDataTypes.get(1));
-          List<ClusterExtension> occupiedClusters = DBSCAN.cluster(allFilteredDataTypes.get(2));
-          List<ClusterExtension> emptyClusters = DBSCAN.cluster(allFilteredDataTypes.get(3));
+          List<ClusterExtension> occupiedClusters = DBSCAN.cluster(allFilteredDataTypes0.get(2));
+          List<ClusterExtension> emptyClusters = DBSCAN.cluster(allFilteredDataTypes0.get(3));
+
+          List<ClusterExtension> opponentClusters1 = DBSCAN.cluster(allFilteredDataTypes1.get(1));
 
           // BOT 0
           // Mainly empty cluster but should also target occupied cluster!
@@ -66,7 +71,7 @@ public class Client {
           // BOT 1 - Strong but slow
           // opponnent cluster
           if (bot1Node != null && targetForBot1.route.size() == 0) {
-            Tuple plannedMove = planMove(myNumber, graph, opponentClusters, confrontingRouteFinder, bot1Node,
+            Tuple plannedMove = planMove(myNumber, graph, opponentClusters1, confrontingRouteFinder, bot1Node,
                 targetForBot1);
             targetForBot1.cluster = plannedMove.cluster;
             targetForBot1.route = plannedMove.route;
@@ -74,8 +79,6 @@ public class Client {
 
           // BOT 2 - Deletion
           // Follows enemy positions
-          // Maybe also follow them at some point?
-          // Also remove own occupied nodes from path
           if (bot2Node != null && targetForBot2.route.size() == 0) {
             int[] players = new int[] { 0, 1, 2 };
             players = Arrays.stream(players).filter(player -> player != myNumber).toArray();
@@ -85,9 +88,11 @@ public class Client {
             if (enemy1Score < enemy2Score) {
               winningEnemy = players[1];
             }
-            float[] fastBot = client.getBotPosition(winningEnemy, 0);
-            targetForBot2.route = confrontingRouteFinder.findRoute(myNumber, bot2Node,
-                findGraphNodeByPosition(graph, fastBot), true);
+            if (recentId % 50 == 1) {
+              float[] fastBot = client.getBotPosition(winningEnemy, 0);
+              targetForBot2.route = confrontingRouteFinder.findRoute(myNumber, bot2Node,
+                  findGraphNodeByPosition(graph, fastBot), false);
+            }
           }
         }
 
@@ -136,6 +141,34 @@ public class Client {
     });
 
     return targetNode;
+  }
+
+  /**
+   * @param graph
+   * @param clusters
+   * @param routeFinder
+   * @param botStartNode
+   * @param botTargetNode
+   * @return
+   */
+  public static GraphNode getClosestCentroid(GraphNode[] graph, List<ClusterExtension> clusters,
+      GraphNode botStartNode) {
+    float[] centerPos = new float[3];
+    double currentClosestCentroid = Double.POSITIVE_INFINITY;
+    for (int i = 0; i < clusters.size(); i++) {
+      List<Float> centroidList = clusters.get(i).getCentroid();
+      float[] centroidArray = new float[centroidList.size()];
+      for (int n = 0; n < centroidList.size(); n++) {
+        centroidArray[n] = centroidList.get(n);
+      }
+      double d = distance(botStartNode.getPosition(), centroidArray);
+      if (Math.min(currentClosestCentroid, d) == d) {
+        centerPos = centroidArray;
+        currentClosestCentroid = d;
+      }
+    }
+    GraphNode center = findGraphNodeByPosition(graph, centerPos);
+    return center;
   }
 
   /**
